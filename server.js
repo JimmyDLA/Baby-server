@@ -4,7 +4,7 @@ const http = require('http')
 const server = http.createServer(app)
 const io = require('socket.io')(server, {
   cors: {
-    origin: 'http://localhost:3000',
+    origin: '*',
     methods: ['GET', 'POST'],
   },
 })
@@ -60,7 +60,7 @@ io.on('connection', socket => {
     */
     // ====================== 11. Listener to incoming Offer ======================
     socket.on('offer', payload => {
-      console.log('[SERVER] offer ')
+      console.log('[SERVER] offer')
       // ====================== 12. Emit offer to targeted user ======================
       io.to(payload.target).emit('offer', payload)
     })
@@ -82,14 +82,22 @@ io.on('connection', socket => {
       io.to(incoming.target).emit('ice-candidate', incoming)
     })
 
-    socket.on('end', id => {
+    socket.on('end', room => {
+      let otherUserID = '';
+      if (rooms[room]) {
+        otherUserID = rooms[room].find(id => id !== socket.id)
+        // console.log(rooms)
+        // console.log({ otherUserID })
+      }
       console.log('[SERVER] end')
-      console.log(`[SERVER] ${rooms[id]}`)
-      delete rooms[id]
+      console.log(`[SERVER] ${rooms[room]}`)
+      delete rooms[room]
       console.log(`[SERVER]`, { rooms })
 
       // closeRoom(id)
-      io.emit('end')
+      if (otherUserID) {
+        socket.to(otherUserID).emit('end')
+      }
     })
 
     socket.on('switch-camera', () => {
