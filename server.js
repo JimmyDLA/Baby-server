@@ -37,6 +37,7 @@ io.on('connection', socket => {
     } else {
       // Babies can only create rooms
       rooms[room] = [socket.id]
+      socket.emit('confirm-room', true)
     }
     /*
         If both initiating and receiving peer joins the room,
