@@ -21,8 +21,46 @@ app.get('/', (req, res) => {
 
 const rooms = {}
 
+const removeFromRoom = (room, id) => {
+  debugger
+  try {
+    const index = rooms[room].indexOf(id);
+    if (index !== -1) {
+      // if index is not undefined, lets remove that 1 item
+      rooms[room].splice(index, 1)
+    }
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+const reasonIsError = (reason) => {
+  let hasError;
+  switch (reason) {
+    case 'ping timeout':
+    case 'transport close':
+    case 'transport error':
+      hasError = true
+      break;
+  
+    default:
+      hasError = false;
+  }
+  debugger
+
+  return hasError;
+}
+
 io.on('connection', socket => {
   console.log('socket connected!', socket.id)
+
+  socket.on('disconnect', (reason) => {
+    console.log(`DESCONNECT ${socket.id} from ${socket.room}`)
+    if (reasonIsError(reason) && socket.room) {
+      removeFromRoom(socket.room, socket.id)
+    }
+    debugger
+  });
 
   socket.on('join-freq', data => {
     console.log('join-freq', data)
@@ -32,11 +70,13 @@ io.on('connection', socket => {
     if (data.parent) {
       // Parents can only join
       if (rooms[room]) {
-        rooms[room].push(socket.id)
+        rooms[room].push(socket.id);
+        socket.room = room;
       }
     } else {
       // Babies can only create rooms
       rooms[room] = [socket.id]
+      socket.room = room;
       socket.emit('confirm-room', true)
     }
     /*
