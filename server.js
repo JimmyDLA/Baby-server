@@ -9,20 +9,19 @@ const io = require('socket.io')(server, {
   },
 })
 const { v4: uuidV4 } = require('uuid')
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT || 3001;
 
-console.log('welcome')
+console.log('[SERVER] welcome')
 app.use(express.static('public'))
 app.get('/', (req, res) => {
   const uuid = uuidV4()
-  console.log('freqency: ', uuid)
+  console.log('[SERVER] freqency: ', uuid)
   res.send(`${uuid}`)
 })
 
 const rooms = {}
 
 const removeFromRoom = (room, id) => {
-  debugger
   try {
     const index = rooms[room].indexOf(id);
     if (index !== -1) {
@@ -30,7 +29,7 @@ const removeFromRoom = (room, id) => {
       rooms[room].splice(index, 1)
     }
   } catch (error) {
-    console.error(error)
+    console.error('[SERVER] ', error)
   }
 }
 
@@ -46,24 +45,22 @@ const reasonIsError = (reason) => {
     default:
       hasError = false;
   }
-  debugger
 
   return hasError;
 }
 
 io.on('connection', socket => {
-  console.log('socket connected!', socket.id)
+  console.log('[SERVER] socket connected!', socket.id)
 
   socket.on('disconnect', (reason) => {
-    console.log(`DESCONNECT ${socket.id} from ${socket.room}`)
+    console.log(`[SERVER] Desconnect ${socket.id} from ${socket.room}`)
     if (reasonIsError(reason) && socket.room) {
       removeFromRoom(socket.room, socket.id)
     }
-    debugger
   });
 
   socket.on('join-freq', data => {
-    console.log('join-freq', data)
+    console.log('[SERVER] join-freq', data)
     const { room } = data
     // ====================== 2. Join or create room with userID ======================
 
@@ -85,11 +82,11 @@ io.on('connection', socket => {
         For initiating peer it would be receiving peer and vice versa.
     */
     let otherUserID = ''
-    console.log({ rooms })
+    console.log('[SERVER] ', { rooms })
     if (rooms[room]) {
       otherUserID = rooms[room].find(id => id !== socket.id)
-      console.log(rooms)
-      console.log({ otherUserID })
+      console.log('[SERVER] ', rooms)
+      console.log('[SERVER] ',{ otherUserID })
     }
     // ====================== 3. If there is other user, emit to JoinFreq ======================
     if (otherUserID) {
@@ -153,4 +150,4 @@ io.on('connection', socket => {
   })
 })
 
-server.listen(PORT, () => console.log('server is running @', PORT))
+server.listen(PORT, () => console.log('[SERVER] server is running @', PORT))
